@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>桃園市政府水務局 小水力發電潛力點智慧評估平台</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Arial, Helvetica, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  color: #333;
+  overflow: hidden;
+  background: #fff;
+}
+
+#map {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 46px;
+  bottom: 24px;
+  z-index: 1;
+}
+
+.topbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 46px;
+  background: #111;
+  color: #fff;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border-bottom: 1px solid #000;
+}
+
+.system-title {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  font-size: 18px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.header-tabs {
+  height: 46px;
+  display: flex;
+  align-items: stretch;
+  margin-left: 12px;
+}
+
+.header-tab {
+  min-width: 96px;
+  height: 46px;
+  padding: 0 16px;
+  border: 0;
+  border-left: 1px solid #2b2b2b;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.header-tab:last-child {
+  border-right: 1px solid #2b2b2b;
+}
+
+.header-tab.active,
+.header-tab:hover {
+  background: #2b2b2b;
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+.header-link {
+  height: 46px;
+  padding: 0 16px;
+  border: 0;
+  border-left: 1px solid #2b2b2b;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.header-link:hover {
+  background: #2b2b2b;
+}
+
+.sidebar {
+  position: absolute;
+  left: 14px;
+  top: 62px;
+  width: 318px;
+  bottom: 38px;
+  background: #fff;
+  border: 1px solid #bdbdbd;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel {
+  display: none;
+  flex: 1;
+  overflow: auto;
+}
+
+.panel.active {
+  display: block;
+}
+
+.panel-title {
+  padding: 14px 14px 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.intro {
+  padding: 0 16px 18px;
+  font-size: 14px;
+  line-height: 1.72;
+}
+
+.intro h4 {
+  font-size: 15px;
+  margin: 14px 0 8px;
+}
+
+.intro ul, .intro ol {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: 1fr 58px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #e6e6e6;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.search-row input {
+  width: 100%;
+  border: 1px solid #c9c9c9;
+  padding: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.search-row button {
+  border: 1px solid #aaa;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.layer-box {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e6e6e6;
+  font-size: 14px;
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 7px 0;
+}
+
+.layer-row label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.power-logo {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  vertical-align: middle;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='29' fill='%23ffd84d' stroke='%23111' stroke-width='4'/%3E%3Cpath d='M35 8 18 35h12l-4 21 20-31H34z' fill='%23fff' stroke='%23111' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.site-list {
+  padding: 8px;
+}
+
+.site-item {
+  display: grid;
+  grid-template-columns: 32px 1fr 16px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 6px;
+  border-bottom: 1px solid #e9e9e9;
+  cursor: pointer;
+}
+
+.site-item:hover, .site-item.active {
+  background: #f2f2f2;
+}
+
+.site-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.site-meta {
+  font-size: 12px;
+  color: #777;
+  margin-top: 2px;
+}
+
+.chevron {
+  color: #999;
+  font-size: 18px;
+}
+
+.map-tools {
+  position: absolute;
+  right: 12px;
+  top: 58px;
+  z-index: 10;
+  display: flex;
+  gap: 6px;
+}
+
+.map-tools button {
+  background: #fff;
+  border: 1px solid #aaa;
+  padding: 7px 10px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,.22);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.map-tools button.active {
+  background: #111;
+  color: #fff;
+}
+
+.footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
+  background: #111;
+  color: #fff;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.modal {
+  position: absolute;
+  inset: 46px 0 24px 0;
+  z-index: 40;
+  background: rgba(0,0,0,.32);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-card {
+  width: min(720px, calc(100vw - 36px));
+  max-height: calc(100vh - 112px);
+  overflow: auto;
+  background: #fff;
+  box-shadow: 0 4px 22px rgba(0,0,0,.35);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+  padding: 12px 14px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close {
+  border: 0;
+  background: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.detail-photo {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+  background: #f5f5f5;
+}
+
+.thumbs {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 12px;
+  overflow: auto;
+}
+
+.thumbs img {
+  width: 72px;
+  height: 48px;
+  object-fit: cover;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.section-heading {
+  margin: 15px 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.info-table th,
+.info-table td {
+  border: 1px solid #ddd;
+  padding: 7px 8px;
+  vertical-align: top;
+}
+
+.info-table th {
+  width: 36%;
+  text-align: left;
+  background: #f6f6f6;
+  color: #555;
+  font-weight: 600;
+}
+
+.marker {
+  width: 28px;
+  height: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='29' fill='%23ffd84d' stroke='%23111' stroke-width='4'/%3E%3Cpath d='M35 8 18 35h12l-4 21 20-31H34z' fill='%23fff' stroke='%23111' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.marker.selected {
+  transform: scale(1.24);
+  filter: drop-shadow(0 0 5px rgba(0,0,0,.55));
+}
+
+.leaflet-popup-content {
+  font-size: 13px;
+}
+
+.popup-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.detail-photo { cursor: zoom-in; }
+.lightbox { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,.86); display: none; align-items: center; justify-content: center; }
+.lightbox.show { display: flex; }
+.lightbox img { max-width: 92vw; max-height: 88vh; object-fit: contain; box-shadow: 0 4px 24px rgba(0,0,0,.5); }
+.lightbox-close { position: fixed; right: 24px; top: 18px; color: #fff; background: transparent; border: 0; font-size: 34px; line-height: 1; cursor: pointer; }
+
+@media(max-width: 900px) {
+  .topbar {
+    height: auto;
+    min-height: 46px;
+    flex-wrap: wrap;
+  }
+  #map {
+    top: 84px;
+  }
+  .sidebar {
+    right: 14px;
+    width: auto;
+    height: 320px;
+    bottom: 38px;
+    top: 100px;
+  }
+  .map-tools {
+    top: 432px;
+    left: 14px;
+    right: auto;
+  }
+  .modal {
+    inset: 84px 0 24px 0;
+  }
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="topbar">
+  <div class="system-title">桃園市政府水務局 小水力發電潛力點智慧評估平台</div>
+  <div class="header-tabs">
+    <button class="header-tab active" id="tabIntro" onclick="showPanel('intro')">平台介紹</button>
+    <button class="header-tab" id="tabList" onclick="showPanel('list')">點位列表</button>
+  </div>
+  <div class="header-spacer"></div>
+  <button class="header-link" onclick="showLegend()">Map Legend</button>
+</div>
+
+<div class="sidebar">
+  <div class="panel active" id="panelIntro">
+    <div class="panel-title">小水力發電潛力點智慧評估平台</div>
+    <div class="intro">
+      <ul>
+        <li>平台介紹</li>
+      </ul>
+      <h4>第一層：全面盤點—以桃園市河川、排水及水資源回收中心為基礎 → 快速評估發電潛能點位</h4>
+      <p>使用說明</p>
+      <ol>
+        <li>本引擎是應用政府的公開地文、水文等資料。</li>
+        <li>目前為快速搜尋出本市具備發電潛力之點位。</li>
+        <li>使用時，需留意評估結果具有不確定性。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="panel" id="panelList">
+    <div class="panel-title">點位列表</div>
+    <div class="search-row">
+      <input id="search" placeholder="搜尋點位名稱、行政區、水系">
+      <button onclick="toggleSort()">Sort</button>
+    </div>
+    <div class="layer-box">
+      <div class="layer-row"><label><span class="power-logo"></span>河川</label><input type="checkbox" data-cat="河川" checked></div>
+      <div class="layer-row"><label><span class="power-logo"></span>排水</label><input type="checkbox" data-cat="排水" checked></div>
+      <div class="layer-row"><label><span class="power-logo"></span>野溪</label><input type="checkbox" data-cat="野溪" checked></div>
+      <div class="layer-row"><label><span class="power-logo"></span>水資源回收中心</label><input type="checkbox" data-cat="水資源回收中心" checked></div>
+    </div>
+    <div id="siteList" class="site-list"></div>
+  </div>
+</div>
+
+<div class="map-tools">
+  <button class="active" id="btnStreet" onclick="setBase('street')">電子地圖</button>
+  <button id="btnSat" onclick="setBase('sat')">航照圖</button>
+  <button onclick="fitAll()">全部點位</button>
+</div>
+
+<div class="footer">© 2026 桃園市政府水務局 版權所有</div>
+
+<div class="modal" id="detailModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="detailTitle"></h3>
+      <button class="close" onclick="closeModal('detailModal')">×</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<div class="modal" id="legendModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Map Legend</h3>
+      <button class="close" onclick="closeModal('legendModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p><span class="power-logo"></span> 河川</p>
+      <p><span class="power-logo"></span> 排水</p>
+      <p><span class="power-logo"></span> 野溪</p>
+      <p><span class="power-logo"></span> 水資源回收中心</p>
+    </div>
+  </div>
+</div>
+
+
+<div class="lightbox" id="photoLightbox" onclick="closePhotoLightbox(event)">
+  <button class="lightbox-close" onclick="closePhotoLightbox(event)">×</button>
+  <img id="lightboxImage" src="" alt="放大照片">
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const sites = [{"id": 1, "name": "南崁溪坑子口圳攔河堰小水力", "category": "河川", "lat": 25.080443293756765, "lon": 121.27129784682269, "x": 277367.0124, "y": 2774715.1214, "capacity": "226.78", "annual": "99.33", "basic": {"位置說明": "南崁溪坑子口圳攔河堰小水力", "TWD97座標": "X：277367.0124；Y：2774715.1214", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：南崁溪坑子口圳攔河堰", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "9.93(cms)", "設計水頭": "2.91(m)", "裝置容量": "226.78 kW", "年發電量": "99.33 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左右岸皆有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_01_1.webp", "assets/site_01_2.webp"]}, {"id": 2, "name": "南崁溪4號攔河堰小水力", "category": "河川", "lat": 25.06052269699597, "lon": 121.28188389948036, "x": 278439.4796, "y": 2772510.8271, "capacity": "173.86", "annual": "76.15", "basic": {"位置說明": "南崁溪4號攔河堰小水力", "TWD97座標": "X：278439.4796；Y：2772510.8271", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：南崁溪4號攔河堰", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "8.62(cms)", "設計水頭": "2.57(m)", "裝置容量": "173.86 kW", "年發電量": "76.15 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "約220m", "道路距離": "左岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_02_1.webp", "assets/site_02_2.webp"]}, {"id": 3, "name": "社子溪攔水堰2 小水力", "category": "河川", "lat": 24.9777816422479, "lon": 121.04826862533993, "x": 254873.111, "y": 2763317.4886, "capacity": "78.23", "annual": "34.26", "basic": {"位置說明": "社子溪攔水堰2 小水力", "TWD97座標": "X：254873.1110；Y：2763317.4886", "水系": "社子溪", "既有/規劃水利建造物": "既有設施：社子溪攔水堰2", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.63(cms)", "設計水頭": "3.79(m)", "裝置容量": "78.23 kW", "年發電量": "34.26 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "右岸饋線併網距離130m", "道路距離": "兩岸無聯外道路，右岸最近道路130m"}, "eia": {}, "development": "-", "images": ["assets/site_03_1.webp"]}, {"id": 4, "name": "老街溪攔水堰1 小水力", "category": "河川", "lat": 25.070198539694772, "lon": 121.19080430106392, "x": 269248.8509, "y": 2773566.4985, "capacity": "77.28", "annual": "33.85", "basic": {"位置說明": "老街溪攔水堰1 小水力", "TWD97座標": "X：269248.8509；Y：2773566.4985", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰1", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.25(cms)", "設計水頭": "3.03(m)", "裝置容量": "77.28 kW", "年發電量": "33.85 萬度/年"}, "land": {"公私有地": "左岸為未登錄地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左岸有聯外道路(<50m)"}, "eia": {}, "development": "-", "images": ["assets/site_04_1.webp", "assets/site_04_2.webp"]}, {"id": 5, "name": "大堀溪攔河堰4小水力", "category": "河川", "lat": 25.023178704174224, "lon": 121.20774182619157, "x": 270965.553, "y": 2768360.9598, "capacity": "64.55", "annual": "28.27", "basic": {"位置說明": "大堀溪攔河堰4小水力", "TWD97座標": "X：270965.5530；Y：2768360.9598", "水系": "大堀溪", "既有/規劃水利建造物": "既有設施：大堀溪攔河堰4", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.33(cms)", "設計水頭": "2.47(m)", "裝置容量": "64.55 kW", "年發電量": "28.27 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_05_1.webp", "assets/site_05_2.webp"]}, {"id": 6, "name": "南崁溪水汴頭攔河堰小水力", "category": "河川", "lat": 25.02661221247017, "lon": 121.30230605189833, "x": 280508.287, "y": 2768759.234, "capacity": "62.78", "annual": "27.50", "basic": {"位置說明": "南崁溪水汴頭攔河堰小水力", "TWD97座標": "X：280508.2870；Y：2768759.2340", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：南崁溪水汴頭攔河堰", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "4.21(cms)", "設計水頭": "1.90(m)", "裝置容量": "62.78 kW", "年發電量": "27.50 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左右岸皆有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_06_1.webp"]}, {"id": 7, "name": "南崁溪4-1號攔河堰小水力", "category": "河川", "lat": 25.037151009760933, "lon": 121.29406625015763, "x": 279674.1984, "y": 2769924.7144, "capacity": "62.05", "annual": "27.18", "basic": {"位置說明": "南崁溪4-1號攔河堰小水力", "TWD97座標": "X：279674.1984；Y：2769924.7144", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：南崁溪4-1號攔河堰", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "4.57(cms)", "設計水頭": "1.73(m)", "裝置容量": "62.05 kW", "年發電量": "27.18 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左右岸皆有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_07_1.webp", "assets/site_07_2.webp"]}, {"id": 8, "name": "南崁溪12號攔河堰小水力", "category": "河川", "lat": 25.048492859886515, "lon": 121.28416561970853, "x": 278672.4839, "y": 2771178.8419, "capacity": "60.08", "annual": "26.32", "basic": {"位置說明": "南崁溪12號攔河堰小水力", "TWD97座標": "X：278672.4839；Y：2771178.8419", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：南崁溪12號攔河堰", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "4.64(cms)", "設計水頭": "1.65(m)", "裝置容量": "60.08 kW", "年發電量": "26.32 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "右岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_08_1.webp", "assets/site_08_2.webp"]}, {"id": 9, "name": "社子溪攔水堰6 小水力", "category": "河川", "lat": 24.969671350281434, "lon": 121.07598386006678, "x": 257671.6936, "y": 2762420.4618, "capacity": "59.33", "annual": "25.99", "basic": {"位置說明": "社子溪攔水堰6 小水力", "TWD97座標": "X：257671.6936；Y：2762420.4618", "水系": "社子溪", "既有/規劃水利建造物": "既有設施：社子溪攔水堰6", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.52(cms)", "設計水頭": "3.00(m)", "裝置容量": "59.33 kW", "年發電量": "25.99 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "左岸饋線併網距離270m", "道路距離": "兩岸無聯外道路，左岸最近道路30m"}, "eia": {}, "development": "-", "images": ["assets/site_09_1.webp"]}, {"id": 10, "name": "老街溪攔水堰5小水力", "category": "河川", "lat": 25.029453159157768, "lon": 121.20835976351255, "x": 271026.847, "y": 2769056.031, "capacity": "56.50", "annual": "24.75", "basic": {"位置說明": "老街溪攔水堰5小水力", "TWD97座標": "X：271026.847；Y：2769056.031", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰5", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.09(cms)", "設計水頭": "2.33(m)", "裝置容量": "56.50 kW", "年發電量": "24.75 萬度/年"}, "land": {"公私有地": "右岸為公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "左岸饋線併網距離170m", "道路距離": "兩岸無聯外道路，左岸最近道路90m"}, "eia": {}, "development": "-", "images": []}, {"id": 11, "name": "社子溪攔水堰4 小水力", "category": "河川", "lat": 24.97597422732183, "lon": 121.06134396235531, "x": 256193.2636, "y": 2763117.8298, "capacity": "56.47", "annual": "24.73", "basic": {"位置說明": "社子溪攔水堰4 小水力", "TWD97座標": "X：256193.2636；Y：2763117.8298", "水系": "社子溪", "既有/規劃水利建造物": "既有設施：社子溪攔水堰4", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.57(cms)", "設計水頭": "2.80(m)", "裝置容量": "56.47 kW", "年發電量": "24.73 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "右岸有聯外道路"}, "eia": {}, "development": "-", "images": []}, {"id": 12, "name": "社子溪攔水堰3 小水力", "category": "河川", "lat": 24.976261492904626, "lon": 121.05379199382205, "x": 255430.8069, "y": 2763149.3243, "capacity": "50.82", "annual": "22.26", "basic": {"位置說明": "社子溪攔水堰3 小水力", "TWD97座標": "X：255430.8069；Y：2763149.3243", "水系": "社子溪", "既有/規劃水利建造物": "既有設施：社子溪攔水堰3", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.59(cms)", "設計水頭": "2.50(m)", "裝置容量": "50.82 kW", "年發電量": "22.26 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "左岸饋線併網距離80m", "道路距離": "兩岸無聯外道路，左岸最近道路80m"}, "eia": {}, "development": "-", "images": []}, {"id": 13, "name": "老街溪攔水堰6小水力", "category": "河川", "lat": 25.023178704174224, "lon": 121.20774182619157, "x": 270965.553, "y": 2768360.9598, "capacity": "48.91", "annual": "21.42", "basic": {"位置說明": "老街溪攔水堰6小水力", "TWD97座標": "X：270965.553；Y：2768360.9598", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰6", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.04(cms)", "設計水頭": "2.05(m)", "裝置容量": "48.91 kW", "年發電量": "21.42 萬度/年"}, "land": {"公私有地": "右岸為未登錄地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "約80m", "道路距離": "兩岸無聯外道路，右岸最近道路80m"}, "eia": {}, "development": "-", "images": ["assets/site_13_1.webp", "assets/site_13_2.webp"]}, {"id": 14, "name": "老街溪攔水堰9小水力", "category": "河川", "lat": 25.000780794393837, "lon": 121.2113067722875, "x": 271329.2011, "y": 2765880.6684, "capacity": "44.29", "annual": "19.40", "basic": {"位置說明": "老街溪攔水堰9小水力", "TWD97座標": "X：271329.2011；Y：2765880.6684", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰9", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.97(cms)", "設計水頭": "1.90(m)", "裝置容量": "44.29 kW", "年發電量": "19.40 萬度/年"}, "land": {"公私有地": "兩岸為公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "兩岸有聯外道路"}, "eia": {}, "development": "右岸有河濱公園，可結合環境教育", "images": ["assets/site_14_1.webp", "assets/site_14_2.webp"]}, {"id": 15, "name": "老街溪攔水堰7小水力", "category": "河川", "lat": 25.01729582178363, "lon": 121.2067607703318, "x": 270867.5379, "y": 2767709.2051, "capacity": "43.66", "annual": "19.12", "basic": {"位置說明": "老街溪攔水堰7小水力", "TWD97座標": "X：270867.5379；Y：2767709.2051", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰7", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.04(cms)", "設計水頭": "1.83(m)", "裝置容量": "43.66 kW", "年發電量": "19.12 萬度/年"}, "land": {"公私有地": "右岸為未登錄地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "右岸饋線併網距離130m", "道路距離": "兩岸無聯外道路，右岸最近道路100m"}, "eia": {}, "development": "-", "images": ["assets/site_15_1.webp", "assets/site_15_2.webp"]}, {"id": 16, "name": "老街溪攔水堰3小水力", "category": "河川", "lat": 25.04943442232277, "lon": 121.20163593541281, "x": 270345.0064, "y": 2771268.1853, "capacity": "41.06", "annual": "17.98", "basic": {"位置說明": "老街溪攔水堰3小水力", "TWD97座標": "X：270345.0064；Y：2771268.1853", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰3", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.21(cms)", "設計水頭": "1.63(m)", "裝置容量": "41.06 kW", "年發電量": "17.98 萬度/年"}, "land": {"公私有地": "兩岸為公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "左岸饋線併網距離100m", "道路距離": "兩岸無聯外道路，左岸最近道路50m"}, "eia": {}, "development": "-", "images": ["assets/site_16_1.webp", "assets/site_16_2.webp"]}, {"id": 17, "name": "社子溪攔水堰9 小水力", "category": "河川", "lat": 24.95451394407979, "lon": 121.09846101597668, "x": 259942.3135, "y": 2760743.0654, "capacity": "40.11", "annual": "17.57", "basic": {"位置說明": "社子溪攔水堰9 小水力", "TWD97座標": "X：259942.3135；Y：2760743.0654", "水系": "社子溪", "既有/規劃水利建造物": "既有設施：社子溪攔水堰9", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "1.49(cms)", "設計水頭": "3.43(m)", "裝置容量": "40.11 kW", "年發電量": "17.57 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "右岸饋線併網距離60m", "道路距離": "兩岸無聯外道路，右岸最近道路60m"}, "eia": {}, "development": "-", "images": ["assets/site_17_1.webp"]}, {"id": 18, "name": "南崁溪2-4號攔河堰小水力", "category": "河川", "lat": 24.99641485737303, "lon": 121.32888436078345, "x": 283198.6671, "y": 2765420.7297, "capacity": "39.04", "annual": "17.10", "basic": {"位置說明": "南崁溪2-4號攔河堰小水力", "TWD97座標": "X：283198.6671；Y：2765420.7297", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：南崁溪2-4號攔河堰", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "1.99(cms)", "設計水頭": "2.50(m)", "裝置容量": "39.04 kW", "年發電量": "17.10 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "右岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_18_1.webp", "assets/site_18_2.webp"]}, {"id": 19, "name": "大堀溪攔河堰2小水力", "category": "河川", "lat": 25.05192484020096, "lon": 121.10205319877747, "x": 260296.9194, "y": 2771532.756, "capacity": "37.53", "annual": "16.44", "basic": {"位置說明": "大堀溪攔河堰2小水力", "TWD97座標": "X：260296.9194；Y：2771532.7560", "水系": "大堀溪", "既有/規劃水利建造物": "既有設施：大堀溪攔河堰2", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.53(cms)", "設計水頭": "1.89(m)", "裝置容量": "37.53 kW", "年發電量": "16.44 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左右岸皆有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_19_1.webp", "assets/site_19_2.webp"]}, {"id": 20, "name": "老街溪攔水堰2小水力", "category": "河川", "lat": 25.067811412207057, "lon": 121.19478029595182, "x": 269650.3418, "y": 2773302.6644, "capacity": "32.35", "annual": "14.17", "basic": {"位置說明": "老街溪攔水堰2小水力", "TWD97座標": "X：269650.3418；Y：2773302.6644", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰2", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.22(cms)", "設計水頭": "1.28(m)", "裝置容量": "32.35 kW", "年發電量": "14.17 萬度/年"}, "land": {"公私有地": "右岸為未登錄地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "右岸饋線併網距離130m", "道路距離": "右有聯外道路(<50m)"}, "eia": {}, "development": "-", "images": ["assets/site_20_1.webp", "assets/site_20_2.webp"]}, {"id": 21, "name": "大堀溪攔河堰9小水力", "category": "河川", "lat": 24.99641485737303, "lon": 121.32888436078345, "x": 283198.6671, "y": 2765420.7297, "capacity": "29.22", "annual": "12.80", "basic": {"位置說明": "大堀溪攔河堰9小水力", "TWD97座標": "X：283198.6671；Y：2765420.7297", "水系": "大堀溪", "既有/規劃水利建造物": "既有設施：大堀溪攔河堰9", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "1.97(cms)", "設計水頭": "1.89(m)", "裝置容量": "29.22 kW", "年發電量": "12.80 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左岸50m內有聯外道路，中間須經過私人土地"}, "eia": {}, "development": "-", "images": ["assets/site_21_1.webp", "assets/site_21_2.webp"]}, {"id": 22, "name": "老街溪攔水堰13 小水力", "category": "河川", "lat": 24.964858808125694, "lon": 121.21950035973778, "x": 272162.6981, "y": 2761903.1886, "capacity": "28.59", "annual": "12.52", "basic": {"位置說明": "老街溪攔水堰13 小水力", "TWD97座標": "X：272162.6981；Y：2761903.1886", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰13", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.64(cms)", "設計水頭": "1.38(m)", "裝置容量": "28.59 kW", "年發電量": "12.52 萬度/年"}, "land": {"公私有地": "兩岸為公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "<50m", "道路距離": "兩岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_22_1.webp"]}, {"id": 23, "name": "雙溪口溪幹線攔水堰2小水力", "category": "排水", "lat": 25.06383691643641, "lon": 121.17759919383414, "x": 267917.6067, "y": 2772860.0503, "capacity": "28.30", "annual": "12.40", "basic": {"位置說明": "雙溪口溪幹線攔水堰2小水力", "TWD97座標": "X：267917.6067；Y：2772860.0503", "水系": "雙溪口溪幹線", "既有/規劃水利建造物": "既有設施：雙溪口溪幹線攔水堰2", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "1.96(cms)", "設計水頭": "1.84(m)", "裝置容量": "28.30 kW", "年發電量": "12.40 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_23_1.webp"]}, {"id": 24, "name": "新街溪排水幹線攔水堰3 小水力", "category": "排水", "lat": 25.068581184815656, "lon": 121.20785864973442, "x": 270969.619493236, "y": 2773389.89118477, "capacity": "27.78", "annual": "12.17", "basic": {"位置說明": "新街溪排水幹線攔水堰3 小水力", "TWD97座標": "X：270969.619493236；Y：2773389.89118477", "水系": "新街溪排水幹線", "既有/規劃水利建造物": "既有設施：新街溪排水幹線攔水堰3", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.36(cms)", "設計水頭": "1.50(m)", "裝置容量": "27.78 kW", "年發電量": "12.17 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": "桃園管理處"}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "左岸饋線併網距離200m", "道路距離": "左岸有聯外道路(>200m)"}, "eia": {}, "development": "無", "images": ["assets/site_24_1.webp", "assets/site_24_2.webp"]}, {"id": 25, "name": "茄苳溪攔河堰3小水力", "category": "河川", "lat": 25.034331444486632, "lon": 121.27734735701253, "x": 277987.7274, "y": 2769608.85, "capacity": "21.43", "annual": "9.39", "basic": {"位置說明": "茄苳溪攔河堰3小水力", "TWD97座標": "X：277987.7274；Y：2769608.8500", "水系": "茄苳溪", "既有/規劃水利建造物": "既有設施：茄苳溪攔河堰3", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.25(cms)", "設計水頭": "0.84(m)", "裝置容量": "21.43 kW", "年發電量": "9.39 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "約10m，惟查詢可併容量為0kw(視為1公里以上無饋線)", "道路距離": "左岸50m內有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_25_1.webp"]}, {"id": 26, "name": "新街溪排水幹線攔水堰12 小水力", "category": "排水", "lat": 25.003121114334213, "lon": 121.22669731796144, "x": 272882.286754335, "y": 2766142.39745541, "capacity": "21.38", "annual": "9.36", "basic": {"位置說明": "新街溪排水幹線攔水堰12 小水力", "TWD97座標": "X：272882.286754335；Y：2766142.39745541", "水系": "新街溪排水幹線", "既有/規劃水利建造物": "既有設施：新街溪排水幹線攔水堰12", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.27(cms)", "設計水頭": "1.20(m)", "裝置容量": "21.38 kW", "年發電量": "9.36 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": "桃園管理處"}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "右岸有聯外道路(<50m)"}, "eia": {}, "development": "無", "images": ["assets/site_26_1.webp", "assets/site_26_2.webp"]}, {"id": 27, "name": "老街溪攔水堰14 小水力", "category": "河川", "lat": 24.940785862841608, "lon": 121.21096104614936, "x": 271304.6326, "y": 2759235.4638, "capacity": "20.6", "annual": "9.02", "basic": {"位置說明": "老街溪攔水堰14 小水力", "TWD97座標": "X：271304.6326；Y：2759235.4638", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰14", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.43(cms)", "設計水頭": "1.08(m)", "裝置容量": "20.6 kW", "年發電量": "9.02 萬度/年"}, "land": {"公私有地": "兩岸為公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "<50m", "道路距離": "兩岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_27_1.webp", "assets/site_27_2.webp"]}, {"id": 28, "name": "老街溪攔水堰12 小水力", "category": "河川", "lat": 24.989280799385597, "lon": 121.21499102969211, "x": 271703.1089, "y": 2764607.4879, "capacity": "20.03", "annual": "8.77", "basic": {"位置說明": "老街溪攔水堰12 小水力", "TWD97座標": "X：271703.1089；Y：2764607.4879", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰12", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.9(cms)", "設計水頭": "0.88(m)", "裝置容量": "20.03 kW", "年發電量": "8.77 萬度/年"}, "land": {"公私有地": "兩岸為公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "左岸饋線併網距離約85m", "道路距離": "左岸無聯外道路，最近道路85m"}, "eia": {}, "development": "-", "images": ["assets/site_28_1.webp", "assets/site_28_2.webp"]}, {"id": 29, "name": "茄苳溪攔河堰2小水力", "category": "河川", "lat": 25.04183901677473, "lon": 121.27996690625307, "x": 278250.3535, "y": 2770440.957, "capacity": "19.34", "annual": "8.47", "basic": {"位置說明": "茄苳溪攔河堰2小水力", "TWD97座標": "X：278250.3535；Y：2770440.9570", "水系": "茄苳溪", "既有/規劃水利建造物": "既有設施：茄苳溪攔河堰2", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.33(cms)", "設計水頭": "0.74(m)", "裝置容量": "19.34 kW", "年發電量": "8.47 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "約30m", "道路距離": "右岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_29_1.webp"]}, {"id": 30, "name": "大堀溪攔河堰13小水力", "category": "河川", "lat": 24.940785862841608, "lon": 121.21096104614936, "x": 271304.6326, "y": 2759235.4638, "capacity": "18.10", "annual": "7.93", "basic": {"位置說明": "大堀溪攔河堰13小水力", "TWD97座標": "X：271304.6326；Y：2759235.4638", "水系": "大堀溪", "既有/規劃水利建造物": "既有設施：大堀溪攔河堰13", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "1.83(cms)", "設計水頭": "1.26(m)", "裝置容量": "18.10 kW", "年發電量": "7.93 萬度/年"}, "land": {"公私有地": "左岸有部分為私有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "饋線併網距離<50m，惟查詢可併容量為0kw(視為1公里以上無饋線)", "道路距離": "左右岸均有有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_30_1.webp", "assets/site_30_2.webp"]}, {"id": 31, "name": "大堀溪攔河堰14小水力", "category": "河川", "lat": 25.049101585645573, "lon": 121.21358429945249, "x": 271550.6545, "y": 2771233.1689, "capacity": "17.57", "annual": "7.70", "basic": {"位置說明": "大堀溪攔河堰14小水力", "TWD97座標": "X：271550.6545；Y：2771233.1689", "水系": "大堀溪", "既有/規劃水利建造物": "既有設施：大堀溪攔河堰14", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "1.21(cms)", "設計水頭": "1.85(m)", "裝置容量": "17.57 kW", "年發電量": "7.70 萬度/年"}, "land": {"公私有地": "左岸有部分為私有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "饋線併網距離<100m，惟查詢可併容量為0kw(視為1公里以上無饋線)", "道路距離": "左岸100m內有聯外道路，中間須經過私人土地"}, "eia": {}, "development": "-", "images": ["assets/site_31_1.webp", "assets/site_31_2.webp"]}, {"id": 32, "name": "社子溪攔水堰12 小水力", "category": "河川", "lat": 24.940980699924037, "lon": 121.11472611432932, "x": 261585.9842, "y": 2759245.3965, "capacity": "16.23", "annual": "7.11", "basic": {"位置說明": "社子溪攔水堰12 小水力", "TWD97座標": "X：261585.9842；Y：2759245.3965", "水系": "社子溪", "既有/規劃水利建造物": "既有設施：社子溪攔水堰12", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "1.13(cms)", "設計水頭": "1.83(m)", "裝置容量": "16.23 kW", "年發電量": "7.11 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左岸有聯外道路"}, "eia": {}, "development": "-", "images": ["assets/site_32_1.webp"]}, {"id": 33, "name": "茄苳溪攔河堰1小水力", "category": "河川", "lat": 25.050482175685183, "lon": 121.27957746330088, "x": 278209.0785, "y": 2771398.221, "capacity": "16.10", "annual": "7.05", "basic": {"位置說明": "茄苳溪攔河堰1小水力", "TWD97座標": "X：278209.0785；Y：2771398.2210", "水系": "茄苳溪", "既有/規劃水利建造物": "既有設施：茄苳溪攔河堰1", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "3.42(cms)", "設計水頭": "0.60(m)", "裝置容量": "16.10 kW", "年發電量": "7.05 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "約30m", "道路距離": "左岸有聯外道路"}, "eia": {}, "development": "-", "images": []}, {"id": 34, "name": "茄苳溪攔河堰6小水力", "category": "河川", "lat": 25.002030918245666, "lon": 121.28142642327957, "x": 278406.7888, "y": 2766031.998, "capacity": "15.77", "annual": "6.91", "basic": {"位置說明": "茄苳溪攔河堰6小水力", "TWD97座標": "X：278406.7888；Y：2766031.9980", "水系": "茄苳溪", "既有/規劃水利建造物": "既有設施：茄苳溪攔河堰6", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.83(cms)", "設計水頭": "0.71(m)", "裝置容量": "15.77 kW", "年發電量": "6.91 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "約110m", "道路距離": "右岸100m內有聯外道路(中間經過公園)"}, "eia": {}, "development": "-", "images": ["assets/site_34_1.webp"]}, {"id": 35, "name": "新街溪排水幹線攔水堰5 小水力", "category": "排水", "lat": 25.04910158566923, "lon": 121.2135842992023, "x": 271550.65447475, "y": 2771233.16890258, "capacity": "15.50", "annual": "6.79", "basic": {"位置說明": "新街溪排水幹線攔水堰5 小水力", "TWD97座標": "X：271550.65447475；Y：2771233.16890258", "水系": "新街溪排水幹線", "既有/規劃水利建造物": "既有設施：新街溪排水幹線攔水堰5", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.50(cms)", "設計水頭": "0.79(m)", "裝置容量": "15.50 kW", "年發電量": "6.79 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": "桃園管理處"}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "左岸有聯外道路(<50m)"}, "eia": {}, "development": "無", "images": ["assets/site_35_1.webp", "assets/site_35_2.webp"]}, {"id": 36, "name": "老街溪攔水堰11 小水力", "category": "河川", "lat": 24.993107534713086, "lon": 121.21689056568682, "x": 271894.1877, "y": 2765031.6508, "capacity": "15.05", "annual": "6.59", "basic": {"位置說明": "老街溪攔水堰11 小水力", "TWD97座標": "X：271894.1877；Y：2765031.6508", "水系": "老街溪", "既有/規劃水利建造物": "既有設施：老街溪攔水堰11", "開發樣態": "水道上具明顯落差(如固床工、落差工等)/"}, "potential": {"設計流量": "2.95(cms)", "設計水頭": "0.65(m)", "裝置容量": "15.05 kW", "年發電量": "6.59 萬度/年"}, "land": {"公私有地": "兩岸為私有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": ""}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "右岸饋線併網距離120m", "道路距離": "右岸有聯外道路(<50m)"}, "eia": {}, "development": "-", "images": ["assets/site_36_1.webp", "assets/site_36_2.webp"]}, {"id": 37, "name": "桃園市北區水資中心 小水力", "category": "水資源回收中心", "lat": 25.050300196672, "lon": 121.25770000082179, "x": 276001.6934, "y": 2771373.6821, "capacity": "0.6", "annual": "0.52", "basic": {"位置說明": "桃園市北區水資中心 小水力", "TWD97座標": "X：276001.6934；Y：2771373.6821/", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：放流口", "開發樣態": "其他：放流口/"}, "potential": {"設計流量": "0.76(cms)", "設計水頭": "0.1m/(放流口管底El.42.30m，南崁溪常水位El.42.20m)", "裝置容量": "0.6 kW", "年發電量": "0.52 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": "桃園市政府"}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "鄰近即有聯外道路"}, "eia": {}, "development": "可結合環境教育", "images": ["assets/site_37_1.webp", "assets/site_37_2.webp", "assets/site_37_3.webp"]}, {"id": 38, "name": "桃園市龜山水資中心 小水力", "category": "水資源回收中心", "lat": 25.045570196310578, "lon": 121.36930000055528, "x": 287263.5461, "y": 2770875.8562, "capacity": "14.5", "annual": "12.70", "basic": {"位置說明": "桃園市龜山水資中心 小水力", "TWD97座標": "X：287263.5461；Y：2770875.8562", "水系": "南崁溪", "既有/規劃水利建造物": "既有設施：放流口", "開發樣態": "其他：放流口/"}, "potential": {"設計流量": "0.26(cms)", "設計水頭": "總水頭=8.61(m)/(放流口管底El.217.88m，南崁溪常水位El.209.27m)/有效發電水頭=8.61-1.5=7.11m ( 1.5m為初估水頭損失)", "裝置容量": "14.5 kW", "年發電量": "12.70 萬度/年"}, "land": {"公私有地": "公有地", "是否涉及原住民土地": "無", "土地管理單位": "", "水利建造物管理單位": "桃園市政府"}, "env": {"涉及項目": "無"}, "access": {"可併網之饋線距離": "鄰近即有饋線", "道路距離": "鄰近即有聯外道路"}, "eia": {}, "development": "可結合環境教育", "images": ["assets/site_37_1.webp", "assets/site_37_2.webp", "assets/site_37_3.webp"]}];
+let selectedId = null;
+let sortDesc = true;
+
+const map = L.map("map").setView([23.08, 120.28], 10);
+
+const baseLayers = {
+  street: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "© OpenStreetMap"
+  }),
+  sat: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19,
+    attribution: "Tiles © Esri"
+  })
+};
+
+let currentBase = baseLayers.street;
+currentBase.addTo(map);
+
+const markers = {};
+
+function setBase(type) {
+  map.removeLayer(currentBase);
+  currentBase = baseLayers[type];
+  currentBase.addTo(map);
+  document.getElementById("btnStreet").classList.toggle("active", type === "street");
+  document.getElementById("btnSat").classList.toggle("active", type === "sat");
+}
+
+function showPanel(type) {
+  document.getElementById("panelIntro").classList.toggle("active", type === "intro");
+  document.getElementById("panelList").classList.toggle("active", type === "list");
+  document.getElementById("tabIntro").classList.toggle("active", type === "intro");
+  document.getElementById("tabList").classList.toggle("active", type === "list");
+}
+
+function icon(site) {
+  const cls = Number(site.id) === Number(selectedId) ? "marker selected" : "marker";
+  return L.divIcon({
+    className: "",
+    html: `<div class="${cls}"></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+}
+
+function addMarkers() {
+  sites.forEach(site => {
+    if(!site.lat || !site.lon) return;
+    const m = L.marker([site.lat, site.lon], { icon: icon(site) }).addTo(map);
+    m.bindPopup(`<div class="popup-title">${site.name}</div>${site.category}`);
+    m.on("click", () => selectSite(site.id, false, true));
+    markers[site.id] = m;
+  });
+}
+
+function fitAll() {
+  const ms = Object.values(markers).filter(m => map.hasLayer(m));
+  if(ms.length) map.fitBounds(L.featureGroup(ms).getBounds().pad(0.12));
+}
+
+function value(v) {
+  if(v === undefined || v === null || v === "" || v === "-") return "";
+  return String(v);
+}
+
+function table(obj) {
+  if(!obj) return "";
+  const rows = Object.entries(obj)
+    .filter(([k,v]) => value(v))
+    .map(([k,v]) => `<tr><th>${k}</th><td>${value(v)}</td></tr>`)
+    .join("");
+  return rows ? `<table class="info-table">${rows}</table>` : "";
+}
+
+function section(title, obj) {
+  const t = table(obj);
+  return t ? `<div class="section-heading">${title}</div>${t}` : "";
+}
+
+function photos(site) {
+  if(!site.images || !site.images.length) return "";
+  return `
+    <img id="mainPhoto" class="detail-photo" src="${site.images[0]}" alt="現地照片" onclick="openPhotoLightbox(this.src)">
+    <div class="thumbs">
+      ${site.images.map(img => `<img src="${img}" onclick="document.getElementById('mainPhoto').src='${img}'">`).join("")}
+    </div>
+  `;
+}
+
+function selectSite(id, zoom=true, openDetail=true) {
+  selectedId = id;
+  const site = sites.find(s => Number(s.id) === Number(id));
+  if(!site) return;
+
+  Object.entries(markers).forEach(([mid, m]) => {
+    const s = sites.find(x => Number(x.id) === Number(mid));
+    if(s) m.setIcon(icon(s));
+  });
+
+  document.querySelectorAll(".site-item").forEach(el => {
+    el.classList.toggle("active", Number(el.dataset.id) === Number(id));
+  });
+
+  if(markers[id]) {
+    if(zoom) map.setView(markers[id].getLatLng(), 15);
+    markers[id].openPopup();
+  }
+
+  if(openDetail) {
+    document.getElementById("detailTitle").textContent = site.name;
+    document.getElementById("detailBody").innerHTML = `
+      ${photos(site)}
+      ${section("基本資料", site.basic)}
+      ${section("發電潛能條件", site.potential)}
+      ${section("土地條件", site.land)}
+      ${section("生態及環境條件", site.env)}
+      ${section("饋線及交通條件", site.access)}
+      ${section("環境影響評估", site.eia)}
+      
+      <div class="section-heading">可結合推動事項</div>
+      <table class="info-table"><tr><th>說明</th><td>${site.development || "-"}</td></tr></table>
+    `;
+    showModal("detailModal");
+  }
+}
+
+function showModal(id) {
+  document.getElementById(id).classList.add("show");
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("show");
+}
+
+function showLegend() {
+  showModal("legendModal");
+}
+
+function activeCategories() {
+  return [...document.querySelectorAll("[data-cat]")]
+    .filter(cb => cb.checked)
+    .map(cb => cb.dataset.cat);
+}
+
+function visibleSites() {
+  const q = document.getElementById("search").value.trim();
+  const cats = activeCategories();
+  let arr = sites.filter(s => cats.includes(s.category));
+  if(q) arr = arr.filter(s => JSON.stringify(s).includes(q));
+  arr.sort((a,b) => {
+    return sortDesc ? Number(a.id) - Number(b.id) : Number(b.id) - Number(a.id);
+  });
+  return arr;
+}
+
+function renderList() {
+  const arr = visibleSites();
+  const list = document.getElementById("siteList");
+  list.innerHTML = arr.map(site => `
+    <div class="site-item" data-id="${site.id}" onclick="selectSite(${site.id}, true, true)">
+      <div><span class="power-logo"></span></div>
+      <div>
+        <div class="site-name">${site.id}. ${site.name}</div>
+        <div class="site-meta">${site.category}</div>
+      </div>
+      <div class="chevron">›</div>
+    </div>
+  `).join("");
+
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  arr.forEach(s => {
+    if(markers[s.id]) markers[s.id].addTo(map);
+  });
+}
+
+function toggleSort() {
+  sortDesc = !sortDesc;
+  renderList();
+}
+
+document.getElementById("search").addEventListener("input", renderList);
+document.querySelectorAll("[data-cat]").forEach(cb => cb.addEventListener("change", renderList));
+
+function openPhotoLightbox(src) {
+  const box = document.getElementById("photoLightbox");
+  const img = document.getElementById("lightboxImage");
+  img.src = src;
+  box.classList.add("show");
+}
+function closePhotoLightbox(event) {
+  if(event && event.target && event.target.id !== "photoLightbox" && !event.target.classList.contains("lightbox-close")) return;
+  const box = document.getElementById("photoLightbox");
+  const img = document.getElementById("lightboxImage");
+  box.classList.remove("show");
+  img.src = "";
+}
+document.addEventListener("keydown", function(event) {
+  if(event.key === "Escape") {
+    const box = document.getElementById("photoLightbox");
+    if(box) box.classList.remove("show");
+  }
+});
+
+addMarkers();
+renderList();
+fitAll();
+</script>
+</body>
+</html>
